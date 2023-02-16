@@ -1,0 +1,22 @@
+# creating vpc endpoint
+resource "aws_vpc_endpoint" "s3" {
+  vpc_id       = aws_vpc.main.id
+  service_name = "com.amazonaws.eu-west-1.s3"
+  
+  tags = {
+	Name = "s3-endpoint"
+  }
+}
+
+resource "aws_vpc_endpoint" "sqs" {
+  vpc_id       = aws_vpc.main.id
+  service_name = "com.amazonaws.eu-west-1.sqs"
+  
+  security_group_ids = [
+    aws_security_group.sg1.id,
+  ]
+  
+  tags = {
+	Name = "sqs-endpoint"
+  }
+}

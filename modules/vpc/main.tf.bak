@@ -1,0 +1,98 @@
+# creating vpc
+resource "aws_vpc" "main" {
+  cidr_block       = var.vpc_cidr_block
+  instance_tenancy = "default"
+
+  tags = {
+    Name = var.vpc_name
+  }
+}
+
+
+# creating internet gateway
+resource "aws_internet_gateway" "gw" {
+  vpc_id = aws_vpc.main.id
+
+  tags = {
+    Name = "main"
+  }
+}
+
+# creating public subnet
+resource "aws_subnet" "public-A" {
+  vpc_id     = aws_vpc.main.id
+  cidr_block = var.public_subnet_cidr
+
+  tags = {
+    Name = "public-subnet"
+  }
+}
+
+# creating vpc endpoint
+resource "aws_vpc_endpoint" "s3" {
+  vpc_id       = aws_vpc.main.id
+  service_name = "com.amazonaws.eu-west-1.s3"
+  
+  tags = {
+	Name = "s3-endpoint"
+  }
+}
+
+
+# creating private subnet
+resource "aws_subnet" "private-A" {
+  vpc_id     = aws_vpc.main.id
+  cidr_block = var.private_subnet_cidr
+
+  tags = {
+    Name = "private-subnet"
+  }
+}
+
+# creating route table for public subnet
+resource "aws_route_table" "publicRT" {
+	vpc_id = aws_vpc.main.id
+
+	route {
+		cidr_block = var.publicRT_cidr
+		gateway_id = aws_internet_gateway.gw.id
+	}
+	
+
+	tags = {
+		Name = "demo-publicRT"
+	}
+	
+}
+
+# creating route table for private subnet
+resource "aws_route_table" "privateRT" {
+	vpc_id = aws_vpc.main.id
+
+	route = []
+	
+
+	tags = {
+		Name = "demo-privateRT"
+	}
+	
+}
+
+resource "aws_vpc_endpoint_route_table_association" "vpcePrivateRT" {
+  route_table_id  = aws_route_table.privateRT.id
+  vpc_endpoint_id = aws_vpc_endpoint.s3.id
+}
+
+
+# to associate publicRT route table with public subnet
+resource "aws_route_table_association" "publicAssociation" {
+  subnet_id      = aws_subnet.public-A.id
+  route_table_id = aws_route_table.publicRT.id
+}
+
+# to associate privateRT route table with private subnet
+resource "aws_route_table_association" "privateAssociation" {
+  subnet_id      = aws_subnet.private-A.id
+  route_table_id = aws_route_table.privateRT.id
+}
+
